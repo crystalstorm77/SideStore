@@ -44,7 +44,9 @@ jobs:
       - name: Setup Xcode
         uses: maxim-lobanov/setup-xcode@v1.6.0
         with:
-          xcode-version: "26.2"
+          # SideStore 0.6.3's stable release workflow was built with Xcode 26.0.
+          # Its pinned em_proxy static library is rejected by Xcode 26.2's libtool.
+          xcode-version: "26.0"
 
       - name: Restore Cache (exact)
         id: xcode-cache-exact
