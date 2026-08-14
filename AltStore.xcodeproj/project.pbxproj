@@ -94,6 +94,7 @@
 		A8B646012D70C23E00125819 /* MarkdownKit in Frameworks */ = {isa = PBXBuildFile; productRef = A8B646002D70C23E00125819 /* MarkdownKit */; };
 		A8C2260E2EC9039A00047C0D /* Nuke in Frameworks */ = {isa = PBXBuildFile; productRef = A8C2260D2EC9039A00047C0D /* Nuke */; };
 		A8EB89C22F5448B20094BC01 /* em_proxy.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8BD2F652F543FD40045335F /* em_proxy.swift */; };
+		C0DE00012F54687A00097AF1 /* em_proxy.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8BD2F652F543FD40045335F /* em_proxy.swift */; };
 		A8EB89CC2F5451AF0094BC01 /* Minimuxer in Frameworks */ = {isa = PBXBuildFile; productRef = A8EB89CB2F5451AF0094BC01 /* Minimuxer */; };
 		A8EB89CE2F5451B50094BC01 /* SemanticVersion in Frameworks */ = {isa = PBXBuildFile; productRef = A8EB89CD2F5451B50094BC01 /* SemanticVersion */; };
 		A8EB89D02F5451C20094BC01 /* KeychainAccess in Frameworks */ = {isa = PBXBuildFile; productRef = A8EB89CF2F5451C20094BC01 /* KeychainAccess */; };
@@ -672,7 +673,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A8038AC82F54687A00097AF1 /* libem_proxy_static.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -719,12 +719,11 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A8038AC82F54687A00097AF1 /* libem_proxy_static.a in Frameworks */,
 				A8EB89CC2F5451AF0094BC01 /* Minimuxer in Frameworks */,
 				A8037A012F54661200097AF1 /* libimobiledevice.a in Frameworks */,
 				A8B646012D70C23E00125819 /* MarkdownKit in Frameworks */,
-				A8037A0E2F54664300097AF1 /* libem_proxy_swift.a in Frameworks */,
 				A8036EA82F54644B00097AF1 /* libimobiledevice.a in Frameworks */,
-				A8038ABC2F54684D00097AF1 /* libem_proxy_swift.a in Frameworks */,
 				A8EB89D02F5451C20094BC01 /* KeychainAccess in Frameworks */,
 				A8C2260E2EC9039A00047C0D /* Nuke in Frameworks */,
 				A83FE3672EC90482005ACE9A /* Starscream in Frameworks */,
@@ -1722,6 +1721,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C0DE00012F54687A00097AF1 /* em_proxy.swift in Sources */,
 				178FB6C72F80B8BD00C92806 /* NSAttributedString+Markdown.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

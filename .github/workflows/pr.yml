@@ -21,13 +21,29 @@ jobs:
           submodules: recursive
           fetch-depth: 1    # shallow clone just for PR
 
+      - name: Add basic HealthKit signing support for free Personal Teams
+        run: |
+          python3 scripts/ci/apply_healthkit_free_team_patch.py
+          git -C Dependencies/AltSign diff --check
+          grep -q 'ALTEntitlementHealthKit.*com.apple.developer.healthkit' Dependencies/AltSign/AltSign/Capabilities/ALTCapabilities.m
+          grep -q 'ALTFeatureHealthKit.*HK421J6T7P' Dependencies/AltSign/AltSign/Capabilities/ALTCapabilities.m
+          grep -A 30 'ALTFreeDeveloperCanUseEntitlement' Dependencies/AltSign/AltSign/Capabilities/ALTCapabilities.m \
+            | grep -q 'ALTEntitlementHealthKit'
+
+      - name: Pin SideStore 0.6.3 proxy assets
+        run: |
+          python3 scripts/ci/pin_em_proxy_063_assets.py
+          git -C Dependencies/em_proxy diff --check
+          grep -q 'releases/download/build/lib\$1-ios.a' Dependencies/em_proxy/fetch-prebuilt.sh
+          grep -q '49dc35b29779c7d9cf2529a2f2116c90d181fd19' Dependencies/em_proxy/fetch-prebuilt.sh
+
       - run: brew install ldid xcbeautify
 
       - name: Setup Env
         run: |
           MARKETING_VERSION=$(python3 scripts/ci/workflow.py get-marketing-version)
           SHORT_COMMIT=$(git rev-parse --short ${{ github.event.pull_request.head.sha }})
-          NORMALIZED_VERSION="${MARKETING_VERSION}-pr.${{ github.event.pull_request.number }}+${SHORT_COMMIT}"
+          NORMALIZED_VERSION="${MARKETING_VERSION}-healthkit.1+${SHORT_COMMIT}"
           python3 scripts/ci/workflow.py set-marketing-version "$NORMALIZED_VERSION"
           echo "SHORT_COMMIT=$SHORT_COMMIT" | tee -a $GITHUB_ENV
           echo "MARKETING_VERSION=$NORMALIZED_VERSION" | tee -a $GITHUB_ENV
@@ -61,9 +77,35 @@ jobs:
           BUILD_LOG_ZIP_PASSWORD: ${{ secrets.BUILD_LOG_ZIP_PASSWORD }}
         run: |
           python3 scripts/ci/workflow.py build; STATUS=$?
+          if [ -f Dependencies/em_proxy/libem_proxy-ios.a ]; then
+            echo 'f88c64e4444f4a14919f19e2f8f826967908475698b8babbdca71b34c077064a  Dependencies/em_proxy/libem_proxy-ios.a' | shasum -a 256 -c -
+            echo 'ac754452d420a6840a707d698ce98eaf36f167d006c5b1c5a16f37fcd57717d9  Dependencies/em_proxy/em_proxy.h' | shasum -a 256 -c -
+          fi
           python3 scripts/ci/workflow.py encrypt-build
           mv SideStore.ipa SideStore-${{ env.MARKETING_VERSION }}.ipa
           exit $STATUS
+
+      - name: Verify HealthKit support in compiled SideStore
+        run: |
+          IPA_PATH="SideStore-${{ env.MARKETING_VERSION }}.ipa"
+          VERIFY_DIR="$RUNNER_TEMP/sidestore-healthkit-verification"
+          mkdir -p "$VERIFY_DIR"
+          unzip -q "$IPA_PATH" -d "$VERIFY_DIR"
+          APP_PATH=$(find "$VERIFY_DIR/Payload" -maxdepth 1 -type d -name '*.app' -print -quit)
+          EXECUTABLE_NAME=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$APP_PATH/Info.plist")
+          EXECUTABLE_PATH="$APP_PATH/$EXECUTABLE_NAME"
+          SIGNING_BINARY="$APP_PATH/Frameworks/AltStoreCore.framework/AltStoreCore"
+          test -f "$EXECUTABLE_PATH"
+          test -f "$SIGNING_BINARY"
+          /usr/bin/strings "$SIGNING_BINARY" | grep -q 'com.apple.developer.healthkit'
+          /usr/bin/strings "$SIGNING_BINARY" | grep -q 'HK421J6T7P'
+          {
+            echo "SideStore version: $(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP_PATH/Info.plist")"
+            echo "Bundle identifier: $(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP_PATH/Info.plist")"
+            echo "Verified compiled entitlement identifier: com.apple.developer.healthkit"
+            echo "Verified compiled App ID feature identifier: HK421J6T7P"
+            shasum -a 256 "$IPA_PATH"
+          } | tee healthkit-verification.txt
 
       - name: Save Cache
         if: ${{ steps.xcode-cache-fallback.outputs.cache-hit != 'true' }}
@@ -82,7 +124,9 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: SideStore-${{ env.MARKETING_VERSION }}.ipa
-          path: SideStore-${{ env.MARKETING_VERSION }}.ipa
+          path: |
+            SideStore-${{ env.MARKETING_VERSION }}.ipa
+            healthkit-verification.txt
 
       - uses: actions/upload-artifact@v4
         with:
