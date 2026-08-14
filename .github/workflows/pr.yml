@@ -94,8 +94,11 @@ jobs:
           APP_PATH=$(find "$VERIFY_DIR/Payload" -maxdepth 1 -type d -name '*.app' -print -quit)
           EXECUTABLE_NAME=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$APP_PATH/Info.plist")
           EXECUTABLE_PATH="$APP_PATH/$EXECUTABLE_NAME"
-          /usr/bin/strings "$EXECUTABLE_PATH" | grep -q 'com.apple.developer.healthkit'
-          /usr/bin/strings "$EXECUTABLE_PATH" | grep -q 'HK421J6T7P'
+          SIGNING_BINARY="$APP_PATH/Frameworks/AltStoreCore.framework/AltStoreCore"
+          test -f "$EXECUTABLE_PATH"
+          test -f "$SIGNING_BINARY"
+          /usr/bin/strings "$SIGNING_BINARY" | grep -q 'com.apple.developer.healthkit'
+          /usr/bin/strings "$SIGNING_BINARY" | grep -q 'HK421J6T7P'
           {
             echo "SideStore version: $(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP_PATH/Info.plist")"
             echo "Bundle identifier: $(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP_PATH/Info.plist")"
