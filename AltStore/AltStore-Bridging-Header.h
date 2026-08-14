@@ -3,3 +3,4 @@
 //
 
 #import "NSAttributedString+Markdown.h"
+#import "../Dependencies/em_proxy/em_proxy.h"
