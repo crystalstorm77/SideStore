@@ -3,4 +3,6 @@
 //
 
 #import "NSAttributedString+Markdown.h"
-#import "../Dependencies/em_proxy/em_proxy.h"
+
+int start_emotional_damage(const char *bind_addr);
+void stop_emotional_damage(void);

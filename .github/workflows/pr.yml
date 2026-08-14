@@ -30,6 +30,13 @@ jobs:
           grep -A 30 'ALTFreeDeveloperCanUseEntitlement' Dependencies/AltSign/AltSign/Capabilities/ALTCapabilities.m \
             | grep -q 'ALTEntitlementHealthKit'
 
+      - name: Pin SideStore 0.6.3 proxy assets
+        run: |
+          python3 scripts/ci/pin_em_proxy_063_assets.py
+          git -C Dependencies/em_proxy diff --check
+          grep -q 'releases/download/build/lib\$1-ios.a' Dependencies/em_proxy/fetch-prebuilt.sh
+          grep -q '49dc35b29779c7d9cf2529a2f2116c90d181fd19' Dependencies/em_proxy/fetch-prebuilt.sh
+
       - run: brew install ldid xcbeautify
 
       - name: Setup Env
@@ -70,6 +77,10 @@ jobs:
           BUILD_LOG_ZIP_PASSWORD: ${{ secrets.BUILD_LOG_ZIP_PASSWORD }}
         run: |
           python3 scripts/ci/workflow.py build; STATUS=$?
+          if [ -f Dependencies/em_proxy/libem_proxy-ios.a ]; then
+            echo 'f88c64e4444f4a14919f19e2f8f826967908475698b8babbdca71b34c077064a  Dependencies/em_proxy/libem_proxy-ios.a' | shasum -a 256 -c -
+            echo 'ac754452d420a6840a707d698ce98eaf36f167d006c5b1c5a16f37fcd57717d9  Dependencies/em_proxy/em_proxy.h' | shasum -a 256 -c -
+          fi
           python3 scripts/ci/workflow.py encrypt-build
           mv SideStore.ipa SideStore-${{ env.MARKETING_VERSION }}.ipa
           exit $STATUS
