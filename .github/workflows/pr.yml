@@ -21,13 +21,22 @@ jobs:
           submodules: recursive
           fetch-depth: 1    # shallow clone just for PR
 
+      - name: Add basic HealthKit signing support for free Personal Teams
+        run: |
+          python3 scripts/ci/apply_healthkit_free_team_patch.py
+          git -C Dependencies/AltSign diff --check
+          grep -q 'ALTEntitlementHealthKit.*com.apple.developer.healthkit' Dependencies/AltSign/AltSign/Capabilities/ALTCapabilities.m
+          grep -q 'ALTFeatureHealthKit.*HK421J6T7P' Dependencies/AltSign/AltSign/Capabilities/ALTCapabilities.m
+          grep -A 30 'ALTFreeDeveloperCanUseEntitlement' Dependencies/AltSign/AltSign/Capabilities/ALTCapabilities.m \
+            | grep -q 'ALTEntitlementHealthKit'
+
       - run: brew install ldid xcbeautify
 
       - name: Setup Env
         run: |
           MARKETING_VERSION=$(python3 scripts/ci/workflow.py get-marketing-version)
           SHORT_COMMIT=$(git rev-parse --short ${{ github.event.pull_request.head.sha }})
-          NORMALIZED_VERSION="${MARKETING_VERSION}-pr.${{ github.event.pull_request.number }}+${SHORT_COMMIT}"
+          NORMALIZED_VERSION="${MARKETING_VERSION}-healthkit.1+${SHORT_COMMIT}"
           python3 scripts/ci/workflow.py set-marketing-version "$NORMALIZED_VERSION"
           echo "SHORT_COMMIT=$SHORT_COMMIT" | tee -a $GITHUB_ENV
           echo "MARKETING_VERSION=$NORMALIZED_VERSION" | tee -a $GITHUB_ENV
@@ -65,6 +74,25 @@ jobs:
           mv SideStore.ipa SideStore-${{ env.MARKETING_VERSION }}.ipa
           exit $STATUS
 
+      - name: Verify HealthKit support in compiled SideStore
+        run: |
+          IPA_PATH="SideStore-${{ env.MARKETING_VERSION }}.ipa"
+          VERIFY_DIR="$RUNNER_TEMP/sidestore-healthkit-verification"
+          mkdir -p "$VERIFY_DIR"
+          unzip -q "$IPA_PATH" -d "$VERIFY_DIR"
+          APP_PATH=$(find "$VERIFY_DIR/Payload" -maxdepth 1 -type d -name '*.app' -print -quit)
+          EXECUTABLE_NAME=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$APP_PATH/Info.plist")
+          EXECUTABLE_PATH="$APP_PATH/$EXECUTABLE_NAME"
+          /usr/bin/strings "$EXECUTABLE_PATH" | grep -q 'com.apple.developer.healthkit'
+          /usr/bin/strings "$EXECUTABLE_PATH" | grep -q 'HK421J6T7P'
+          {
+            echo "SideStore version: $(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP_PATH/Info.plist")"
+            echo "Bundle identifier: $(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP_PATH/Info.plist")"
+            echo "Verified compiled entitlement identifier: com.apple.developer.healthkit"
+            echo "Verified compiled App ID feature identifier: HK421J6T7P"
+            shasum -a 256 "$IPA_PATH"
+          } | tee healthkit-verification.txt
+
       - name: Save Cache
         if: ${{ steps.xcode-cache-fallback.outputs.cache-hit != 'true' }}
         uses: actions/cache/save@v3
@@ -82,7 +110,9 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: SideStore-${{ env.MARKETING_VERSION }}.ipa
-          path: SideStore-${{ env.MARKETING_VERSION }}.ipa
+          path: |
+            SideStore-${{ env.MARKETING_VERSION }}.ipa
+            healthkit-verification.txt
 
       - uses: actions/upload-artifact@v4
         with:
