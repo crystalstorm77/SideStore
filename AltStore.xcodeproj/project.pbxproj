@@ -672,7 +672,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A8038AC82F54687A00097AF1 /* libem_proxy_static.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -719,6 +718,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A8038AC82F54687A00097AF1 /* libem_proxy_static.a in Frameworks */,
 				A8EB89CC2F5451AF0094BC01 /* Minimuxer in Frameworks */,
 				A8037A012F54661200097AF1 /* libimobiledevice.a in Frameworks */,
 				A8B646012D70C23E00125819 /* MarkdownKit in Frameworks */,
